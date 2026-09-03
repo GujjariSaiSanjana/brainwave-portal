@@ -4,7 +4,7 @@ import { AppError } from "../../lib/errors.js";
 import { requestMeta } from "../../lib/request-meta.js";
 import { validateBody } from "../../lib/validation.js";
 import { authenticate, requireUser } from "../../middleware/authenticate.js";
-import { loginRateLimiter } from "../../middleware/security.js";
+import { loginEmailRateLimiter, loginIpRateLimiter, refreshRateLimiter } from "../../middleware/security.js";
 import { changePasswordSchema, loginSchema } from "./auth.schemas.js";
 import * as auth from "./auth.service.js";
 
@@ -14,14 +14,14 @@ function refreshCookie(req: { cookies: unknown }): string | undefined {
   return (req.cookies as Record<string, string | undefined>)[REFRESH_COOKIE];
 }
 
-authRouter.post("/login", loginRateLimiter, async (req, res) => {
+authRouter.post("/login", loginIpRateLimiter, loginEmailRateLimiter, async (req, res) => {
   const { email, password } = validateBody(loginSchema, req);
   const { profile, tokens } = await auth.login(email, password, requestMeta(req));
   setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
   res.json({ user: profile });
 });
 
-authRouter.post("/refresh", async (req, res) => {
+authRouter.post("/refresh", refreshRateLimiter, async (req, res) => {
   const token = refreshCookie(req);
   if (!token) throw AppError.unauthenticated("Missing refresh token");
   try {

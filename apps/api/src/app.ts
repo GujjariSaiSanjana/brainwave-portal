@@ -7,7 +7,7 @@ import { env, isProduction } from "./config/env.js";
 import { logger } from "./lib/logger.js";
 import { authenticate } from "./middleware/authenticate.js";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
-import { apiRateLimiter, enforceHttps, requireJsonForMutations } from "./middleware/security.js";
+import { adminWriteRateLimiter, apiRateLimiter, enforceHttps, requireJsonForMutations } from "./middleware/security.js";
 import { auditRouter } from "./modules/audit/audit.routes.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { departmentsRouter } from "./modules/departments/departments.routes.js";
@@ -20,7 +20,7 @@ import { zohoPublicRouter, zohoRouter } from "./modules/zoho/zoho.routes.js";
 export function createApp() {
   const app = express();
 
-  app.set("trust proxy", 1);
+  app.set("trust proxy", env.TRUST_PROXY);
   app.disable("x-powered-by");
 
   app.use(enforceHttps);
@@ -45,8 +45,8 @@ export function createApp() {
 
   // Everything below requires a valid session.
   app.use("/api", authenticate);
-  app.use("/api/users", usersRouter);
-  app.use("/api/roles", rolesRouter);
+  app.use("/api/users", adminWriteRateLimiter, usersRouter);
+  app.use("/api/roles", adminWriteRateLimiter, rolesRouter);
   app.use("/api/permissions", permissionsRouter);
   app.use("/api/departments", departmentsRouter);
   app.use("/api/audit", auditRouter);
