@@ -92,6 +92,7 @@ function UsersView() {
   return (
     <>
       <PageHeader
+        eyebrow="Administration"
         title="Users"
         description="Manage portal accounts, departments, and role assignments."
         actions={
@@ -104,11 +105,11 @@ function UsersView() {
         }
       />
 
-      <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="relative mb-4 max-w-sm">
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search by name or email"
-          className="pl-8"
+          className="h-10 bg-card pl-9"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -142,11 +143,11 @@ function UsersView() {
           }
         />
       ) : (
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       )}
 
       {data ? (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {data.total} user{data.total === 1 ? "" : "s"}
           </span>

@@ -8,7 +8,7 @@ import { RequirePermission } from "@/components/require-permission";
 import { PageHeader } from "@/components/page-header";
 import { UserTable } from "@/components/user-table";
 import { AuditTable } from "@/components/audit-table";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InlineNotice } from "@/components/inline-notice";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function TeamView() {
@@ -24,42 +24,45 @@ function TeamView() {
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertTitle>Unable to load team</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+      <InlineNotice tone="red">
+        <strong className="font-medium">Unable to load team.</strong> {error}
+      </InlineNotice>
     );
   }
 
   if (!data) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
 
+  const count = data.members.length;
+
   return (
     <>
       <PageHeader
-        title={data.department ? `${data.department.name} team` : "Team"}
+        eyebrow="Your department"
+        title={data.department ? data.department.name : "Team"}
         description={
           data.department
-            ? `${data.members.length} member${data.members.length === 1 ? "" : "s"} in your department.`
+            ? `${count} member${count === 1 ? "" : "s"} report into this department.`
             : "You are not assigned to a department."
         }
       />
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Members</h2>
-        <UserTable users={data.members} emptyMessage="No members in this department." />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-sm font-medium text-muted-foreground">Recent activity</h2>
-        <AuditTable entries={data.activity} compact />
-      </section>
+      <div className="grid gap-6 2xl:grid-cols-[3fr_2fr]">
+        <section className="min-w-0">
+          <h2 className="mb-3 text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">Members</h2>
+          <UserTable users={data.members} emptyMessage="No members in this department." />
+        </section>
+        <section className="min-w-0">
+          <h2 className="mb-3 text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">Recent activity</h2>
+          <AuditTable entries={data.activity} compact />
+        </section>
+      </div>
     </>
   );
 }

@@ -36,6 +36,7 @@ function AuditView() {
   return (
     <>
       <PageHeader
+        eyebrow="Administration"
         title="Audit log"
         description="Authentication events, administrative changes, and Zoho access."
         actions={
@@ -45,7 +46,7 @@ function AuditView() {
         }
       />
 
-      <div className="max-w-xs">
+      <div className="mb-4 max-w-xs">
         <Select
           items={items}
           value={action}
@@ -54,7 +55,7 @@ function AuditView() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-full font-mono text-xs">
+          <SelectTrigger className="h-10 w-full bg-card font-mono text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -67,10 +68,10 @@ function AuditView() {
         </Select>
       </div>
 
-      {data ? <AuditTable entries={data.items} /> : <Skeleton className="h-64 w-full" />}
+      {data ? <AuditTable entries={data.items} /> : <Skeleton className="h-64 w-full rounded-xl" />}
 
       {data ? (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {data.total} event{data.total === 1 ? "" : "s"}
           </span>

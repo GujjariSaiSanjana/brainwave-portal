@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRequest } from "@/hooks/use-request";
-import { Lock, Plus } from "lucide-react";
+import { Lock, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { api, errorMessage } from "@/lib/api";
 import type { Permission, Role } from "@/lib/types";
@@ -12,10 +12,32 @@ import { RequirePermission } from "@/components/require-permission";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RoleDialog } from "@/components/admin/role-dialog";
-import { Badge } from "@/components/ui/badge";
+import { StatusPill } from "@/components/status-pill";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
+function groupOf(key: string): string {
+  return key.split(":")[0] ?? key;
+}
+
+function PermissionChips({ keys }: { keys: string[] }) {
+  if (keys.length === 0) return <p className="text-sm text-muted-foreground">No permissions</p>;
+  const groups = new Map<string, string[]>();
+  for (const k of keys) groups.set(groupOf(k), [...(groups.get(groupOf(k)) ?? []), k]);
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-2">
+      {Array.from(groups.entries()).map(([g, list]) => (
+        <div key={g} className="flex flex-wrap items-center gap-1">
+          {list.map((k) => (
+            <span key={k} className="rounded-md border bg-muted/50 px-1.5 py-0.5 font-mono text-xs text-foreground/80">
+              {k}
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function RolesView() {
   const { user: me } = useAuth();
@@ -63,6 +85,7 @@ function RolesView() {
   return (
     <>
       <PageHeader
+        eyebrow="Administration"
         title="Roles"
         description="Roles group permissions. Users may hold several roles; their permissions are combined."
         actions={
@@ -78,49 +101,54 @@ function RolesView() {
       {roles === null ? (
         <div className="grid gap-4 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-36" />
+            <Skeleton key={i} className="h-40 rounded-xl" />
           ))}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {roles.map((role) => (
-            <Card key={role.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {role.name}
-                  {role.isSystem ? <Lock className="size-3.5 text-muted-foreground" aria-label="System role" /> : null}
-                </CardTitle>
-                <CardDescription>
-                  {role.description ?? "No description"} · {role.userCount} user
-                  {role.userCount === 1 ? "" : "s"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-1">
-                  {role.permissions.length === 0 ? (
-                    <span className="text-sm text-muted-foreground">No permissions</span>
-                  ) : (
-                    role.permissions.map((p) => (
-                      <Badge key={p} variant="outline" className="font-mono">
-                        {p}
-                      </Badge>
-                    ))
-                  )}
-                </div>
-                {writable ? (
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => openDialog(role)}>
-                      Edit
-                    </Button>
-                    {!role.isSystem ? (
-                      <Button variant="destructive" size="sm" onClick={() => setDeleting(role)}>
-                        Delete
-                      </Button>
-                    ) : null}
+            <article key={role.id} className="flex flex-col rounded-xl border bg-card">
+              <div className="flex-1 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-display flex items-center gap-2 text-[18px] leading-tight font-semibold">
+                      {role.name}
+                      {role.isSystem ? (
+                        <StatusPill tone="stone" className="font-sans">
+                          <Lock className="size-3" />
+                          System
+                        </StatusPill>
+                      ) : null}
+                    </h3>
+                    <p className="mt-1 text-[13.5px] text-muted-foreground">{role.description ?? "No description"}</p>
                   </div>
-                ) : null}
-              </CardContent>
-            </Card>
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                    <Users className="size-3.5" />
+                    {role.userCount}
+                  </span>
+                </div>
+                <div className="mt-4">
+                  <PermissionChips keys={role.permissions} />
+                </div>
+              </div>
+              {writable ? (
+                <div className="flex items-center gap-2 border-t bg-muted/30 px-5 py-3">
+                  <Button variant="outline" size="sm" onClick={() => openDialog(role)}>
+                    Edit
+                  </Button>
+                  {!role.isSystem ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/8 hover:text-destructive"
+                      onClick={() => setDeleting(role)}
+                    >
+                      Delete
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+            </article>
           ))}
         </div>
       )}

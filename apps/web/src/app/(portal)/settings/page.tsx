@@ -41,9 +41,9 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" description="Manage your account." />
+      <PageHeader eyebrow="Account" title="Settings" description="Your profile and sign-in details." />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Profile</CardTitle>
@@ -61,7 +61,7 @@ export default function SettingsPage() {
                 <dt className="text-muted-foreground">Roles</dt>
                 <dd className="flex flex-wrap gap-1">
                   {user.roles.map((r) => (
-                    <Badge key={r.id} variant="secondary">
+                    <Badge key={r.id} variant="outline">
                       {r.name}
                     </Badge>
                   ))}

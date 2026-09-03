@@ -4,79 +4,78 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { AuditEntry } from "@/lib/types";
 import { formatDateTime, fullName } from "@/lib/format";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { StatusPill, type PillTone } from "@/components/status-pill";
+import { DataBody, DataCell, DataEmpty, DataHead, DataHeader, DataRow, DataTable } from "@/components/data-table";
+import { TableCell, TableRow } from "@/components/ui/table";
 
-function actionVariant(action: string): "default" | "secondary" | "destructive" | "outline" {
-  if (action.endsWith(".failed") || action.endsWith(".deleted")) return "destructive";
-  if (action.startsWith("auth.")) return "outline";
-  return "secondary";
+function actionTone(action: string): PillTone {
+  if (action.endsWith(".failed") || action.endsWith(".deleted") || action.endsWith(".disconnected")) return "red";
+  if (action.startsWith("zoho.")) return "blue";
+  if (action.startsWith("auth.")) return "stone";
+  return "amber";
 }
 
 function Row({ entry, compact }: { entry: AuditEntry; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const hasMeta = entry.metadata && Object.keys(entry.metadata).length > 0;
+  const span = compact ? 4 : 6;
 
   return (
     <>
-      <TableRow>
-        <TableCell className="whitespace-nowrap text-muted-foreground">
+      <DataRow>
+        <DataCell className="font-mono text-[12.5px] whitespace-nowrap text-muted-foreground">
           {formatDateTime(entry.createdAt)}
-        </TableCell>
-        <TableCell>
-          <Badge variant={actionVariant(entry.action)} className="font-mono">
+        </DataCell>
+        <DataCell>
+          <StatusPill tone={actionTone(entry.action)} className="font-mono font-normal">
             {entry.action}
-          </Badge>
-        </TableCell>
-        <TableCell className="whitespace-nowrap">
+          </StatusPill>
+        </DataCell>
+        <DataCell className="whitespace-nowrap">
           {entry.actor ? (
             <div className="flex flex-col">
               <span>{fullName(entry.actor)}</span>
-              <span className="text-xs text-muted-foreground">{entry.actor.email}</span>
+              {!compact ? (
+                <span className="font-mono text-[12px] text-muted-foreground">{entry.actor.email}</span>
+              ) : null}
             </div>
           ) : (
             <span className="text-muted-foreground">—</span>
           )}
-        </TableCell>
+        </DataCell>
         {!compact ? (
           <>
-            <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+            <DataCell className="font-mono text-[12.5px] whitespace-nowrap text-muted-foreground">
               {entry.targetType ? `${entry.targetType}${entry.targetId ? ` · ${entry.targetId.slice(0, 8)}` : ""}` : "—"}
-            </TableCell>
-            <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+            </DataCell>
+            <DataCell className="font-mono text-[12.5px] whitespace-nowrap text-muted-foreground">
               {entry.ip ?? "—"}
-            </TableCell>
+            </DataCell>
           </>
         ) : null}
-        <TableCell className="w-10">
+        <DataCell className="w-12 text-right">
           {hasMeta ? (
             <Button
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? "Hide details" : "Show details"}
+              aria-expanded={open}
             >
               {open ? <ChevronDown /> : <ChevronRight />}
             </Button>
           ) : null}
-        </TableCell>
-      </TableRow>
+        </DataCell>
+      </DataRow>
       {open && hasMeta ? (
         <TableRow className="bg-muted/40 hover:bg-muted/40">
-          <TableCell colSpan={compact ? 4 : 6}>
-            <pre className="overflow-x-auto font-mono text-xs whitespace-pre-wrap">
+          <TableCell colSpan={span} className="px-5 py-3">
+            <pre className="overflow-x-auto font-mono text-xs leading-relaxed whitespace-pre-wrap">
               {JSON.stringify(entry.metadata, null, 2)}
             </pre>
             {entry.userAgent ? (
-              <p className="mt-2 text-xs text-muted-foreground">{entry.userAgent}</p>
+              <p className="mt-2 font-mono text-[11px] text-muted-foreground">{entry.userAgent}</p>
             ) : null}
           </TableCell>
         </TableRow>
@@ -87,34 +86,26 @@ function Row({ entry, compact }: { entry: AuditEntry; compact?: boolean }) {
 
 export function AuditTable({ entries, compact }: { entries: AuditEntry[]; compact?: boolean }) {
   return (
-    <div className="overflow-x-auto rounded-xl border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Time</TableHead>
-            <TableHead>Action</TableHead>
-            <TableHead>Actor</TableHead>
-            {!compact ? (
-              <>
-                <TableHead>Target</TableHead>
-                <TableHead>IP</TableHead>
-              </>
-            ) : null}
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {entries.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={compact ? 4 : 6} className="py-10 text-center text-muted-foreground">
-                No activity recorded.
-              </TableCell>
-            </TableRow>
-          ) : (
-            entries.map((e) => <Row key={e.id} entry={e} compact={compact} />)
-          )}
-        </TableBody>
-      </Table>
-    </div>
+    <DataTable>
+      <DataHeader>
+        <DataHead>Time</DataHead>
+        <DataHead>Action</DataHead>
+        <DataHead>Actor</DataHead>
+        {!compact ? (
+          <>
+            <DataHead>Target</DataHead>
+            <DataHead>IP</DataHead>
+          </>
+        ) : null}
+        <DataHead className="w-12" />
+      </DataHeader>
+      <DataBody>
+        {entries.length === 0 ? (
+          <DataEmpty colSpan={compact ? 4 : 6}>No activity recorded.</DataEmpty>
+        ) : (
+          entries.map((e) => <Row key={e.id} entry={e} compact={compact} />)
+        )}
+      </DataBody>
+    </DataTable>
   );
 }
