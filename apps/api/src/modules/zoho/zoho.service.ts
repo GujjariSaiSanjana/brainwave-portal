@@ -1,4 +1,5 @@
 import { AUDIT } from "../../config/audit-actions.js";
+import { env } from "../../config/env.js";
 import { AppError } from "../../lib/errors.js";
 import type { RequestMeta } from "../../lib/request-meta.js";
 import type { AuthenticatedUser } from "../../middleware/authenticate.js";
@@ -36,9 +37,21 @@ export async function listServices(user: AuthenticatedUser) {
   return { items: servicesFor(user), connected: connected || mock, mock };
 }
 
+// Short-lived cache so a burst of page loads costs one Zoho call, not one per user.
+const cache = new Map<ZohoServiceKey, { data: ZohoRecords; expiresAt: number }>();
+
+async function loadRecords(key: ZohoServiceKey): Promise<ZohoRecords> {
+  if (isMockMode()) return mockRecords(key);
+  const hit = cache.get(key);
+  if (hit && hit.expiresAt > Date.now()) return hit.data;
+  const data = await fetchers[key]();
+  if (env.ZOHO_CACHE_TTL_SECONDS > 0) cache.set(key, { data, expiresAt: Date.now() + env.ZOHO_CACHE_TTL_SECONDS * 1000 });
+  return data;
+}
+
 export async function records(user: AuthenticatedUser, key: string, meta: RequestMeta) {
   const service = authorizedService(user, key);
-  const data = isMockMode() ? mockRecords(service.key) : await fetchers[service.key]();
+  const data = await loadRecords(service.key);
   await audit.record({
     ...meta,
     action: AUDIT.ZOHO_RECORDS_VIEWED,
