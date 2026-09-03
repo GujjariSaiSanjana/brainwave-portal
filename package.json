@@ -1,0 +1,20 @@
+{
+  "name": "brainwave",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Employee portal with role-based access to Zoho One services",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "db:up": "docker compose up -d db",
+    "db:migrate": "pnpm --filter @brainwave/api db:migrate",
+    "db:seed": "pnpm --filter @brainwave/api db:seed",
+    "db:reset": "pnpm --filter @brainwave/api db:reset"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.15.1"
+}
