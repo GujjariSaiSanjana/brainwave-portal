@@ -36,8 +36,7 @@ export const ZOHO_HOSTS = {
 export const ZOHO_SCOPES = [
   "ZohoCRM.modules.leads.READ",
   "ZohoCRM.settings.modules.READ",
-  "ZohoPeople.forms.READ",
-  "ZohoPeople.employee.READ",
+  "ZOHOPEOPLE.forms.READ",
   "Desk.tickets.READ",
   "Desk.basic.READ",
   "Desk.settings.READ",
