@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { AUDIT } from "../../config/audit-actions.js";
+import { assertUserNotProtected } from "../../lib/demo.js";
 import { AppError } from "../../lib/errors.js";
 import { hashPassword } from "../../lib/password.js";
 import { prisma } from "../../lib/prisma.js";
@@ -101,6 +102,10 @@ export async function update(
 ): Promise<UserSummary> {
   if (id === actor.actorId && input.isActive === false) throw AppError.badRequest("You cannot deactivate your own account");
   await assertDepartmentExists(input.departmentId);
+  if (input.isActive === false || input.password !== undefined) {
+    const target = await prisma.user.findUnique({ where: { id }, select: { email: true } });
+    if (target) assertUserNotProtected(target.email, "deactivated or given a new password");
+  }
 
   const data: Prisma.UserUpdateInput = {};
   if (input.firstName !== undefined) data.firstName = input.firstName;
@@ -130,8 +135,9 @@ export async function update(
 
 export async function setRoles(id: string, roleIds: string[], actor: Actor): Promise<UserSummary> {
   await assertRolesExist(roleIds);
-  const target = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+  const target = await prisma.user.findUnique({ where: { id }, select: { id: true, email: true } });
   if (!target) throw AppError.notFound("User");
+  assertUserNotProtected(target.email, "given different roles");
 
   const [, , row] = await prisma.$transaction([
     prisma.userRole.deleteMany({ where: { userId: id } }),
@@ -146,6 +152,7 @@ export async function remove(id: string, actor: Actor): Promise<void> {
   if (id === actor.actorId) throw AppError.badRequest("You cannot delete your own account");
   const target = await prisma.user.findUnique({ where: { id }, select: { email: true } });
   if (!target) throw AppError.notFound("User");
+  assertUserNotProtected(target.email, "deleted");
   await prisma.user.delete({ where: { id } });
   await audit.record({ ...actor, action: AUDIT.USER_DELETED, targetType: "user", targetId: id, metadata: { email: target.email } });
 }

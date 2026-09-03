@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { AUDIT } from "../../config/audit-actions.js";
 import { SYSTEM_ROLES } from "../../config/permissions.js";
+import { assertRoleNotProtected } from "../../lib/demo.js";
 import { AppError } from "../../lib/errors.js";
 import { prisma } from "../../lib/prisma.js";
 import type { RequestMeta } from "../../lib/request-meta.js";
@@ -107,6 +108,7 @@ export async function setPermissions(id: string, permissionKeys: string[], actor
 export async function remove(id: string, actor: Actor): Promise<void> {
   const existing = await findOrThrow(id);
   if (existing.isSystem) throw AppError.badRequest("System roles cannot be deleted");
+  assertRoleNotProtected(existing.slug, "deleted");
   await prisma.role.delete({ where: { id } });
   await audit.record({ ...actor, action: AUDIT.ROLE_DELETED, targetType: "role", targetId: id, metadata: { name: existing.name } });
 }

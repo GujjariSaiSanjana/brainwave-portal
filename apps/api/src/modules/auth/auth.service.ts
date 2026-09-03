@@ -1,6 +1,7 @@
 import { env } from "../../config/env.js";
 import { AUDIT } from "../../config/audit-actions.js";
 import { randomToken, sha256 } from "../../lib/crypto.js";
+import { assertUserNotProtected } from "../../lib/demo.js";
 import { AppError } from "../../lib/errors.js";
 import { hashPassword, verifyPassword } from "../../lib/password.js";
 import { prisma } from "../../lib/prisma.js";
@@ -136,6 +137,7 @@ export async function logout(refreshToken: string | undefined, actorId: string |
 export async function changePassword(userId: string, currentPassword: string, newPassword: string, meta: RequestMeta): Promise<void> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw AppError.unauthenticated();
+  assertUserNotProtected(user.email, "given a new password");
   if (!(await verifyPassword(user.passwordHash, currentPassword))) {
     throw AppError.badRequest("Current password is incorrect");
   }

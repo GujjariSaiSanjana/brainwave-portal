@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import argon2 from "argon2";
+import { SEEDED_EMAILS } from "../src/config/demo.js";
 import { ALL_PERMISSION_KEYS, PERMISSION_CATALOG, PERMISSIONS, SYSTEM_ROLES } from "../src/config/permissions.js";
 
 const prisma = new PrismaClient();
@@ -30,6 +31,9 @@ const users: { email: string; firstName: string; lastName: string; department: s
 const slugify = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 async function main() {
+  for (const u of users) {
+    if (!(SEEDED_EMAILS as readonly string[]).includes(u.email)) throw new Error(`${u.email} is missing from SEEDED_EMAILS`);
+  }
   for (const p of PERMISSION_CATALOG) {
     await prisma.permission.upsert({
       where: { key: p.key },
