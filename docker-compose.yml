@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: brainwave-db
+    environment:
+      POSTGRES_USER: brainwave
+      POSTGRES_PASSWORD: brainwave
+      POSTGRES_DB: brainwave
+    ports:
+      - "5432:5432"
+    volumes:
+      - brainwave-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brainwave -d brainwave"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: brainwave-api
+    profiles: ["full"]
+    env_file: apps/api/.env
+    environment:
+      DATABASE_URL: postgresql://brainwave:brainwave@db:5432/brainwave
+      WEB_URL: http://localhost:3000
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: brainwave-web
+    profiles: ["full"]
+    environment:
+      API_URL: http://api:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  brainwave-db:
