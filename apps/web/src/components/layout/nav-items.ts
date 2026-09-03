@@ -1,13 +1,4 @@
-import {
-  Activity,
-  Building2,
-  KeyRound,
-  LayoutDashboard,
-  Plug,
-  Settings,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { Activity, Building2, KeyRound, LayoutDashboard, Plug, Users, type LucideIcon } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
 
 export interface NavItem {
@@ -33,5 +24,3 @@ export const adminNav: NavItem[] = [
     permission: PERMISSIONS.integrationsManage,
   },
 ];
-
-export const settingsNav: NavItem = { href: "/settings", label: "Settings", icon: Settings };

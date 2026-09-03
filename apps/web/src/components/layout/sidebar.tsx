@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, Layers } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { can } from "@/lib/permissions";
+import { serviceTheme } from "@/lib/service-theme";
+import { fullName, initials } from "@/lib/format";
 import { useAuth } from "@/components/auth-provider";
-import { adminNav, primaryNav, settingsNav, type NavItem } from "./nav-items";
+import { Brand } from "./brand";
+import { adminNav, primaryNav, type NavItem } from "./nav-items";
 import type { ZohoService } from "@/lib/types";
 
 interface Props {
@@ -17,15 +20,15 @@ interface Props {
 function NavLink({
   href,
   label,
-  icon: Icon,
   active,
   onClick,
+  children,
 }: {
   href: string;
   label: string;
-  icon: NavItem["icon"];
   active: boolean;
   onClick?: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <Link
@@ -33,13 +36,13 @@ function NavLink({
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+        "relative flex h-9 items-center gap-3 rounded-md px-3 text-sm transition-colors",
         active
-          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-          : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+          ? "bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:top-2 before:bottom-2 before:left-0 before:w-[3px] before:rounded-r before:bg-sidebar-primary"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
       )}
     >
-      <Icon className="size-4 shrink-0" />
+      {children}
       <span className="truncate">{label}</span>
     </Link>
   );
@@ -47,33 +50,41 @@ function NavLink({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-2.5 pt-4 pb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+    <p className="px-3 pt-6 pb-2 text-[11px] font-medium tracking-[0.08em] text-sidebar-foreground/50 uppercase">
       {children}
     </p>
   );
 }
 
+function IconItem({ item, active, onClick }: { item: NavItem; active: boolean; onClick?: () => void }) {
+  const Icon = item.icon;
+  return (
+    <NavLink href={item.href} label={item.label} active={active} onClick={onClick}>
+      <Icon className="size-4 shrink-0 opacity-80" />
+    </NavLink>
+  );
+}
+
 export function Sidebar({ services, onNavigate }: Props) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const visible = (items: NavItem[]) => items.filter((i) => !i.permission || can(user, i.permission));
   const admin = visible(adminNav);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center gap-2 border-b px-4">
-        <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Layers className="size-4" />
-        </div>
-        <span className="font-semibold">Brainwave</span>
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+      <div className="flex h-16 items-center px-5">
+        <Link href="/dashboard" onClick={onNavigate} className="rounded-md">
+          <Brand />
+        </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 py-2">
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
         <div className="space-y-0.5">
           {visible(primaryNav).map((item) => (
-            <NavLink key={item.href} {...item} active={isActive(item.href)} onClick={onNavigate} />
+            <IconItem key={item.href} item={item} active={isActive(item.href)} onClick={onNavigate} />
           ))}
         </div>
 
@@ -86,10 +97,13 @@ export function Sidebar({ services, onNavigate }: Props) {
                   key={s.key}
                   href={`/services/${s.key}`}
                   label={s.name}
-                  icon={ExternalLink}
                   active={isActive(`/services/${s.key}`)}
                   onClick={onNavigate}
-                />
+                >
+                  <span className="flex size-4 items-center justify-center">
+                    <span className={cn("size-2 rounded-full", serviceTheme(s.key).dot)} />
+                  </span>
+                </NavLink>
               ))}
             </div>
           </>
@@ -100,16 +114,50 @@ export function Sidebar({ services, onNavigate }: Props) {
             <SectionLabel>Administration</SectionLabel>
             <div className="space-y-0.5">
               {admin.map((item) => (
-                <NavLink key={item.href} {...item} active={isActive(item.href)} onClick={onNavigate} />
+                <IconItem key={item.href} item={item} active={isActive(item.href)} onClick={onNavigate} />
               ))}
             </div>
           </>
         ) : null}
       </nav>
 
-      <div className="border-t px-2 py-2">
-        <NavLink {...settingsNav} active={isActive(settingsNav.href)} onClick={onNavigate} />
-      </div>
+      {user ? (
+        <div className="border-t border-sidebar-border p-3">
+          <div className="flex items-center gap-3 rounded-md px-2 py-1.5">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-sidebar-foreground/15 text-xs font-semibold text-white">
+              {initials(user)}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-white">{fullName(user)}</p>
+              <p className="truncate font-mono text-[11px] text-sidebar-foreground/60">{user.email}</p>
+            </div>
+          </div>
+          <div className="mt-1 flex gap-1">
+            <Link
+              href="/settings"
+              onClick={onNavigate}
+              className={cn(
+                "flex h-9 flex-1 items-center gap-2 rounded-md px-2 text-[13px] transition-colors",
+                isActive("/settings")
+                  ? "bg-sidebar-accent text-white"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-white",
+              )}
+            >
+              <Settings className="size-4" />
+              Settings
+            </Link>
+            <button
+              type="button"
+              onClick={() => void logout()}
+              aria-label="Sign out"
+              title="Sign out"
+              className="flex size-9 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-white"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
