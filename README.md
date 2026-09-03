@@ -72,6 +72,8 @@ Zoho account exists.
 5. Sign in as an admin, open **Admin → Integrations** and click **Connect Zoho**. Approve the
    consent screen with the Zoho account that owns the organisation.
 
+A step-by-step walkthrough with troubleshooting is in [docs/zoho-setup.md](docs/zoho-setup.md).
+
 The refresh token is stored encrypted in the `zoho_connections` table. Access tokens are refreshed
 on demand and never sent to the browser. Employees only ever talk to the portal API.
 
