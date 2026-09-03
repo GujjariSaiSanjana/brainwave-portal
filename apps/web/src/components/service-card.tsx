@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ExternalLink, Table2 } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { api, errorMessage } from "@/lib/api";
 import type { ZohoService } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ServiceTile } from "@/components/service-tile";
 
 export async function launchService(key: string) {
   const { url } = await api.post<{ url: string }>(`/api/zoho/services/${key}/launch`);
@@ -29,21 +29,27 @@ export function ServiceCard({ service }: { service: ZohoService }) {
   };
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle>{service.name}</CardTitle>
-        <CardDescription>{service.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="mt-auto flex flex-wrap gap-2">
-        <Button onClick={open} disabled={busy}>
+    <article className="group flex flex-col rounded-xl border bg-card p-5 transition-[border-color,transform,box-shadow] duration-150 hover:-translate-y-px hover:border-ring/40 hover:shadow-sm">
+      <div className="flex items-start gap-3.5">
+        <ServiceTile serviceKey={service.key} />
+        <div className="min-w-0">
+          <h3 className="font-display text-[17px] leading-tight font-semibold">{service.name}</h3>
+          <p className="mt-1 text-[13.5px] leading-relaxed text-muted-foreground">{service.description}</p>
+        </div>
+      </div>
+      <div className="mt-6 flex items-center justify-between gap-2">
+        <Button onClick={open} disabled={busy} className="h-9">
           <ExternalLink data-icon="inline-start" />
           Open in Zoho
         </Button>
-        <Button variant="outline" nativeButton={false} render={<Link href={`/services/${service.key}`} />}>
-          <Table2 data-icon="inline-start" />
+        <Link
+          href={`/services/${service.key}`}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+        >
           View {service.resourceLabel.toLowerCase()}
-        </Button>
-      </CardContent>
-    </Card>
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+    </article>
   );
 }

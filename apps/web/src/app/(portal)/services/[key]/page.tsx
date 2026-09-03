@@ -11,18 +11,13 @@ import { useAuth } from "@/components/auth-provider";
 import { can, PERMISSIONS } from "@/lib/permissions";
 import { useRequest } from "@/hooks/use-request";
 import { PageHeader } from "@/components/page-header";
+import { ServiceTile } from "@/components/service-tile";
+import { StatusPill, toneFor } from "@/components/status-pill";
+import { InlineNotice } from "@/components/inline-notice";
 import { launchService } from "@/components/service-card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { DataBody, DataCell, DataEmpty, DataHead, DataHeader, DataRow, DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 const NAMES: Record<string, string> = {
   crm: "Zoho CRM",
@@ -30,6 +25,19 @@ const NAMES: Record<string, string> = {
   desk: "Zoho Desk",
   books: "Zoho Books",
 };
+
+const STATUS_COLUMNS = new Set(["status", "priority"]);
+const MONO_COLUMNS = new Set(["number", "employeeId", "email", "phone", "createdAt", "date", "dueDate", "joined"]);
+
+const time = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
+
+function Cell({ column, value }: { column: string; value: string | number | null }) {
+  if (value === null || value === undefined || value === "") return <span className="text-muted-foreground">—</span>;
+  if (STATUS_COLUMNS.has(column)) return <StatusPill tone={toneFor(value)}>{String(value)}</StatusPill>;
+  if (typeof value === "number") return <span className="font-mono tabular-nums">{value.toLocaleString()}</span>;
+  if (MONO_COLUMNS.has(column)) return <span className="font-mono text-[13px] text-muted-foreground">{value}</span>;
+  return <>{value}</>;
+}
 
 export default function ServicePage({ params }: { params: Promise<{ key: string }> }) {
   const { key } = use(params);
@@ -55,12 +63,15 @@ export default function ServicePage({ params }: { params: Promise<{ key: string 
   const title = data?.service.name ?? NAMES[key] ?? "Service";
   const code = error instanceof ApiError ? error.code : null;
   const message = errorMessage(error);
+  const manages = can(user, PERMISSIONS.integrationsManage);
 
   return (
     <>
       <PageHeader
-        title={title}
-        description={data ? `${data.service.resourceLabel} fetched ${formatDateTime(data.fetchedAt)}` : undefined}
+        leading={<ServiceTile serviceKey={key} size="lg" />}
+        eyebrow={data ? `${data.service.name} · ${data.service.resourceLabel}` : "Zoho service"}
+        title={data ? data.service.resourceLabel : title}
+        description={data?.service.description}
         actions={
           <>
             <Button variant="outline" onClick={() => void reload()} disabled={loading}>
@@ -77,81 +88,69 @@ export default function ServicePage({ params }: { params: Promise<{ key: string 
 
       {error ? (
         code === "FORBIDDEN" ? (
-          <Alert variant="destructive">
-            <AlertTitle>Access denied</AlertTitle>
-            <AlertDescription>
-              Your role does not include access to {title}.{" "}
-              <Link href="/dashboard" className="underline underline-offset-4">
-                Back to dashboard
-              </Link>
-            </AlertDescription>
-          </Alert>
+          <InlineNotice tone="red">
+            <strong className="font-medium">Access denied.</strong> Your role does not include access to {title}.{" "}
+            <Link href="/dashboard" className="underline underline-offset-4">
+              Back to dashboard
+            </Link>
+          </InlineNotice>
         ) : code === "ZOHO_NOT_CONNECTED" ? (
-          <Alert>
-            <AlertTitle>Zoho is not connected</AlertTitle>
-            <AlertDescription>
-              {can(user, PERMISSIONS.integrationsManage) ? (
-                <span>
-                  Connect the Zoho service account to load live data.{" "}
-                  <Link href="/admin/integrations" className="underline underline-offset-4">
-                    Open integrations
-                  </Link>
-                </span>
-              ) : (
-                "An administrator needs to connect the Zoho service account before data can be loaded."
-              )}
-            </AlertDescription>
-          </Alert>
+          <InlineNotice>
+            <strong className="font-medium">Zoho is not connected.</strong>{" "}
+            {manages ? (
+              <>
+                Connect the service account to load live data.{" "}
+                <Link href="/admin/integrations" className="underline underline-offset-4">
+                  Open integrations
+                </Link>
+              </>
+            ) : (
+              "An administrator needs to connect the Zoho service account before data can be loaded."
+            )}
+          </InlineNotice>
         ) : code === "NOT_FOUND" ? (
-          <Alert variant="destructive">
-            <AlertTitle>Unknown service</AlertTitle>
-            <AlertDescription>There is no service with the key &quot;{key}&quot;.</AlertDescription>
-          </Alert>
+          <InlineNotice tone="red">
+            <strong className="font-medium">Unknown service.</strong> There is no service with the key &quot;{key}&quot;.
+          </InlineNotice>
         ) : (
-          <Alert variant="destructive">
-            <AlertTitle>Unable to load data</AlertTitle>
-            <AlertDescription>{message}</AlertDescription>
-          </Alert>
+          <InlineNotice tone="red">
+            <strong className="font-medium">Unable to load data.</strong> {message}
+          </InlineNotice>
         )
       ) : null}
 
       {loading && !data ? (
-        <div className="space-y-2">
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
-        </div>
+        <Skeleton className="h-72 w-full rounded-xl" />
       ) : data && !error ? (
-        <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {data.columns.map((c) => (
-                  <TableHead key={c.key}>{c.label}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+        <>
+          <DataTable>
+            <DataHeader>
+              {data.columns.map((c) => (
+                <DataHead key={c.key}>{c.label}</DataHead>
+              ))}
+            </DataHeader>
+            <DataBody>
               {data.rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={data.columns.length} className="py-10 text-center text-muted-foreground">
-                    No {data.service.resourceLabel.toLowerCase()} found.
-                  </TableCell>
-                </TableRow>
+                <DataEmpty colSpan={data.columns.length}>No {data.service.resourceLabel.toLowerCase()} found.</DataEmpty>
               ) : (
                 data.rows.map((row, i) => (
-                  <TableRow key={i}>
+                  <DataRow key={String(row.id ?? i)}>
                     {data.columns.map((c) => (
-                      <TableCell key={c.key} className="whitespace-nowrap">
-                        {row[c.key] ?? "—"}
-                      </TableCell>
+                      <DataCell key={c.key} className="whitespace-nowrap">
+                        <Cell column={c.key} value={row[c.key] ?? null} />
+                      </DataCell>
                     ))}
-                  </TableRow>
+                  </DataRow>
                 ))
               )}
-            </TableBody>
-          </Table>
-        </div>
+            </DataBody>
+          </DataTable>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {data.rows.length} row{data.rows.length === 1 ? "" : "s"} · fetched {time.format(new Date(data.fetchedAt))}
+            {" · "}
+            {formatDateTime(data.fetchedAt).split(",")[0]}
+          </p>
+        </>
       ) : null}
     </>
   );
