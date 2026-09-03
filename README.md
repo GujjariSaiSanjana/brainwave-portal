@@ -133,6 +133,14 @@ apps/
 | `pnpm db:seed`    | Seed reference data and demo users           |
 | `pnpm db:reset`   | Drop, recreate, migrate and seed the database|
 
+## Deploying
+
+Step-by-step instructions for Vercel (web) plus Render (API and PostgreSQL), or everything on Render,
+are in [docs/deployment.md](docs/deployment.md). Set `DEMO_MODE=true` on a public demo: seeded accounts
+and roles become undeletable, their passwords fixed, and the Zoho connection locked, while everything
+else stays editable. Rate limits apply per IP, per login email, per user for Zoho calls and per admin
+for changes.
+
 ## Running everything in Docker
 
 ```bash
