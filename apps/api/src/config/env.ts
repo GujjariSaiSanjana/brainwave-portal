@@ -28,6 +28,14 @@ const schema = z.object({
     .string()
     .optional()
     .transform((v) => v === "true" || v === "1"),
+  ZOHO_CACHE_TTL_SECONDS: z.coerce.number().int().min(0).default(60),
+  // Number of reverse proxies in front of the API (Render alone = 1, Vercel rewrite -> Render = 2).
+  TRUST_PROXY: z.coerce.number().int().min(0).default(1),
+  // Protects seeded demo accounts and the Zoho connection when credentials are public.
+  DEMO_MODE: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
 });
 
 export type Env = z.infer<typeof schema>;
