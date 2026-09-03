@@ -2,18 +2,19 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Layers } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
 import type { Profile } from "@/lib/types";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
+const DEMO_PASSWORD = "Password123!";
 const DEMO_ACCOUNTS = [
   { email: "admin@brainwave.dev", role: "Admin" },
-  { email: "manager@brainwave.dev", role: "Manager (Sales)" },
+  { email: "manager@brainwave.dev", role: "Manager · Sales" },
   { email: "hr@brainwave.dev", role: "HR" },
   { email: "sales@brainwave.dev", role: "Sales" },
   { email: "support@brainwave.dev", role: "Support" },
@@ -34,6 +35,7 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,82 +53,82 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-sm space-y-4">
-      <div className="flex items-center justify-center gap-2">
-        <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Layers className="size-4" />
-        </div>
-        <span className="text-lg font-semibold">Brainwave</span>
+    <div className="w-full max-w-[400px]">
+      <div className="rounded-xl border bg-card p-7 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <h2 className="font-display text-[28px] leading-none font-semibold">Sign in</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Use your portal credentials to continue.</p>
+
+        <form onSubmit={submit} className="mt-7 space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="username"
+              required
+              className="h-11 px-3.5 text-[15px] md:text-[15px]"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              className="h-11 px-3.5 text-[15px] md:text-[15px]"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          {error ? (
+            <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/6 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+          <Button type="submit" className="h-11 w-full text-[15px]" disabled={busy}>
+            {busy ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>Use your portal credentials to continue.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="username"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            {error ? (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
-            <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? "Signing in…" : "Sign in"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-muted/30">
-        <CardHeader>
-          <CardTitle className="text-sm">Demo accounts</CardTitle>
-          <CardDescription>
-            Password for every account is <code className="font-mono">Password123!</code>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-1 text-sm">
-            {DEMO_ACCOUNTS.map((a) => (
-              <li key={a.email} className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  className="font-mono text-xs text-foreground hover:underline"
-                  onClick={() => {
-                    setEmail(a.email);
-                    setPassword("Password123!");
-                  }}
-                >
-                  {a.email}
-                </button>
-                <span className="text-xs text-muted-foreground">{a.role}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      <div className="mt-4 rounded-xl border bg-card/60">
+        <button
+          type="button"
+          onClick={() => setShowDemo((v) => !v)}
+          aria-expanded={showDemo}
+          className="flex h-11 w-full items-center justify-between rounded-xl px-4 text-sm font-medium"
+        >
+          Demo accounts
+          <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", showDemo && "rotate-180")} />
+        </button>
+        {showDemo ? (
+          <div className="border-t px-2 pt-2 pb-3">
+            <ul>
+              {DEMO_ACCOUNTS.map((a) => (
+                <li key={a.email}>
+                  <button
+                    type="button"
+                    className="flex h-10 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition-colors hover:bg-muted"
+                    onClick={() => {
+                      setEmail(a.email);
+                      setPassword(DEMO_PASSWORD);
+                    }}
+                  >
+                    <span className="font-mono text-[13px]">{a.email}</span>
+                    <span className="text-xs text-muted-foreground">{a.role}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 px-2 text-xs text-muted-foreground">
+              Password for every account is <span className="font-mono">{DEMO_PASSWORD}</span>
+            </p>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
