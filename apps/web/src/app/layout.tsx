@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/auth-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -14,6 +14,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  weight: "variable",
+  axes: ["opsz"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: {
     default: "Brainwave Portal",
@@ -24,11 +32,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col font-sans">
         <AuthProvider>
           {children}
-          <Toaster position="top-right" richColors closeButton />
+          <Toaster position="bottom-right" />
         </AuthProvider>
       </body>
     </html>
